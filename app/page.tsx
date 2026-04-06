@@ -1,149 +1,187 @@
-"use client";
+import Link from "next/link";
+import { ShieldAlert, ArrowRight, CheckCircle2 } from "lucide-react";
 
-import { useRef, useState } from "react";
-
-export default function Home() {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [result, setResult] = useState<string>("");
-  const [isUploading, setIsUploading] = useState(false);
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("files", file);
-    formData.append("transaction_type", "portal_upload");
-    formData.append("contact_email", "bostoncopier@gmail.com");
-
-    try {
-      setIsUploading(true);
-      setResult("");
-
-      const response = await fetch(
-        "https://fraud-review-api.onrender.com/api/submit",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.ok) {
-        setResult(
-          `Submission received successfully.\n\nSubmission ID: ${data.submission_id}\nFile: ${
-            data.files_received?.[0] || "N/A"
-          }\n\nMessage: ${data.message}`
-        );
-      } else {
-        setResult(`Submission failed.\n\n${JSON.stringify(data, null, 2)}`);
-      }
-    } catch (error) {
-      console.error(error);
-      setResult(
-        `Upload failed: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
+export default function HomePage() {
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#0f172a",
-        color: "white",
-        fontFamily: "Arial",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "460px",
-          padding: "30px",
-          borderRadius: "12px",
-          backgroundColor: "#1e293b",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-          textAlign: "center",
-        }}
-      >
-        <h1 style={{ fontSize: "24px", marginBottom: "10px" }}>
-          Fraud Review Portal v4
-        </h1>
-
-        <p style={{ marginBottom: "20px", color: "#cbd5f5" }}>
-          Welcome back. Your security dashboard.
-        </p>
-
-        <div
-          style={{
-            backgroundColor: "#0f172a",
-            padding: "15px",
-            borderRadius: "8px",
-            marginBottom: "20px",
-          }}
-        >
-          <p style={{ margin: 0 }}>Transactions Remaining</p>
-          <h2 style={{ margin: "10px 0", fontSize: "28px" }}>15</h2>
-        </div>
-
-        <button
-          onClick={handleUploadClick}
-          disabled={isUploading}
-          style={{
-            width: "100%",
-            padding: "12px",
-            borderRadius: "8px",
-            border: "none",
-            backgroundColor: isUploading ? "#64748b" : "#22c55e",
-            color: "white",
-            fontSize: "16px",
-            cursor: isUploading ? "not-allowed" : "pointer",
-            marginBottom: result ? "20px" : "0",
-          }}
-        >
-          {isUploading ? "Uploading..." : "Upload Email or File"}
-        </button>
-
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          style={{ display: "none" }}
-        />
-
-        {result && (
-          <div
-            style={{
-              marginTop: "20px",
-              textAlign: "left",
-              backgroundColor: "#0f172a",
-              borderRadius: "8px",
-              padding: "16px",
-              whiteSpace: "pre-wrap",
-              color: "#e2e8f0",
-              fontSize: "14px",
-              lineHeight: 1.5,
-            }}
-          >
-            {result}
+    <main className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 md:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-sm">
+              <ShieldAlert className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Fraud Review Portal
+              </p>
+              <h1 className="text-lg font-semibold text-slate-900">
+                Secure Payment Review
+              </h1>
+            </div>
           </div>
-        )}
-      </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/sign-in"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-slate-100"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/submit"
+              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+            >
+              Start Review
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <section className="px-4 py-20 md:px-6">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
+              Human-in-the-loop fraud screening
+            </p>
+
+            <h2 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+              Before you send money, get it reviewed.
+            </h2>
+
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
+              Fraud Review Portal helps users submit suspicious invoices, wire
+              instructions, payment requests, and supporting files for
+              structured analysis and specialist review before action is taken.
+            </p>
+
+            <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+              <Link
+                href="/submit"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+              >
+                Start a Submission
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-slate-900 transition hover:bg-slate-100"
+              >
+                View Dashboard
+              </Link>
+            </div>
+
+            <div className="mt-10 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-sm font-semibold text-slate-900">
+                  Upload suspicious files
+                </p>
+                <p className="mt-2 text-sm text-slate-600">
+                  Support for email files, PDFs, screenshots, and images.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-sm font-semibold text-slate-900">
+                  Structured risk review
+                </p>
+                <p className="mt-2 text-sm text-slate-600">
+                  Surface suspicious patterns before funds are moved.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-sm font-semibold text-slate-900">
+                  Specialist oversight
+                </p>
+                <p className="mt-2 text-sm text-slate-600">
+                  Keep results gated behind human review for safer decisions.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-900 text-white">
+                <ShieldAlert className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Review workflow
+                </p>
+                <h3 className="text-2xl font-semibold text-slate-900">
+                  How it works
+                </h3>
+              </div>
+            </div>
+
+            <div className="mt-8 space-y-5">
+              <div className="flex gap-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-slate-700" />
+                <div>
+                  <p className="font-medium text-slate-900">
+                    1. Submit suspicious material
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    Upload a questionable invoice, payment request, email, or
+                    screenshot.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-slate-700" />
+                <div>
+                  <p className="font-medium text-slate-900">
+                    2. Analyze indicators
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    The system reviews for urgency language, sender mismatches,
+                    changed instructions, and other fraud markers.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-slate-700" />
+                <div>
+                  <p className="font-medium text-slate-900">
+                    3. Hold for specialist review
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    Results stay conservative and are reviewed before final
+                    guidance is delivered.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-slate-700" />
+                <div>
+                  <p className="font-medium text-slate-900">
+                    4. Track activity in your dashboard
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    View submissions, statuses, and reference IDs in one place.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-medium text-slate-900">
+                Built for conservative decision support
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                The goal is not to create false confidence. The goal is to slow
+                risky decisions down and support informed action before money
+                moves.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
