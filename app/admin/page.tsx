@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 
@@ -32,26 +32,51 @@ function formatStatus(status: string | null) {
 }
 
 async function getCurrentUserEmail() {
-  const { userId, sessionClaims } = await auth();
+  const user = await currentUser();
+
+  if (!user) {
+    redirect("/sign-in");
+  }
+
+  return user.emailAddresses?.[0]?.emailAddress || "";
+}
+
+export default async function AdminPage() {
+  const { userId } = await auth();
 
   if (!userId) {
     redirect("/sign-in");
   }
 
-  const email =
-    (sessionClaims?.email as string | undefined) ||
-    (sessionClaims?.primaryEmailAddress as string | undefined) ||
-    "";
-
-  return email;
-}
-
-export default async function AdminPage() {
   const email = await getCurrentUserEmail();
   const adminEmail = process.env.ADMIN_EMAIL || "";
 
   if (!email || email.toLowerCase() !== adminEmail.toLowerCase()) {
-    redirect("/dashboard");
+    return (
+      <main className="min-h-screen bg-slate-50 p-8">
+        <div className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h1 className="text-2xl font-semibold text-slate-900">Admin Debug</h1>
+
+          <p className="mt-4 text-sm text-slate-600">
+            Signed-in email from Clerk:
+          </p>
+          <p className="mt-1 rounded bg-slate-100 p-3 text-sm text-slate-900">
+            {email || "NONE"}
+          </p>
+
+          <p className="mt-4 text-sm text-slate-600">
+            ADMIN_EMAIL from .env.local:
+          </p>
+          <p className="mt-1 rounded bg-slate-100 p-3 text-sm text-slate-900">
+            {adminEmail || "NONE"}
+          </p>
+
+          <p className="mt-4 text-sm text-red-600">
+            These values do not match, so admin access is being denied.
+          </p>
+        </div>
+      </main>
+    );
   }
 
   const supabase = await createClient();
@@ -118,7 +143,7 @@ export default async function AdminPage() {
                 {submissions.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300"
                   >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-2">
@@ -143,6 +168,15 @@ export default async function AdminPage() {
                             ? new Date(item.created_at).toLocaleString()
                             : "N/A"}
                         </p>
+
+                        <div className="pt-2">
+                          <a
+                            href={`/admin/submissions/${item.id}`}
+                            className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100"
+                          >
+                            Open Detail
+                          </a>
+                        </div>
                       </div>
 
                       <div className="min-w-[220px] space-y-3">
@@ -155,11 +189,11 @@ export default async function AdminPage() {
                         </div>
 
                         <form
-                          action={`/api/admin/submissions/${item.id}`}
+                          action="/api/admin/submissions"
                           method="POST"
                           className="space-y-2"
                         >
-                          <input type="hidden" name="_method" value="PATCH" />
+                          <input type="hidden" name="id" value={String(item.id)} />
 
                           <select
                             name="status"

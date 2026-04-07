@@ -172,9 +172,10 @@ export default async function DashboardPage() {
               {submissions.length > 0 ? (
                 <div className="grid gap-4">
                   {submissions.map((item) => (
-                    <div
+                    <a
                       key={item.id}
-                      className="rounded-2xl border border-slate-200 bg-[#fffdf9] p-5 transition hover:border-[#d6c39a]"
+                      href={`/dashboard/${item.id}`}
+                      className="block rounded-2xl border border-slate-200 bg-[#fffdf9] p-5 transition hover:border-[#d6c39a]"
                     >
                       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <div className="space-y-2">
@@ -207,7 +208,7 @@ export default async function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                    </div>
+                    </a>
                   ))}
                 </div>
               ) : (
