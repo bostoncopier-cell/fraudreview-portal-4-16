@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
@@ -10,7 +11,16 @@ type Submission = {
   transaction_type: string | null;
   file_name: string | null;
   status: string | null;
+  final_decision: string | null;
   created_at: string | null;
+};
+
+type AdminPageProps = {
+  searchParams: Promise<{
+    status?: string;
+    decision?: string;
+    q?: string;
+  }>;
 };
 
 function formatStatus(status: string | null) {
@@ -31,6 +41,24 @@ function formatStatus(status: string | null) {
   return "bg-slate-100 text-slate-700 border border-slate-200";
 }
 
+function formatDecision(decision: string | null) {
+  const value = (decision || "").toLowerCase();
+
+  if (value === "clear") {
+    return "bg-emerald-50 text-emerald-800 border border-emerald-200";
+  }
+
+  if (value === "caution") {
+    return "bg-amber-50 text-amber-800 border border-amber-200";
+  }
+
+  if (value === "suspicious" || value === "escalate") {
+    return "bg-red-50 text-red-800 border border-red-200";
+  }
+
+  return "bg-slate-100 text-slate-700 border border-slate-200";
+}
+
 async function getCurrentUserEmail() {
   const user = await currentUser();
 
@@ -41,12 +69,18 @@ async function getCurrentUserEmail() {
   return user.emailAddresses?.[0]?.emailAddress || "";
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: AdminPageProps) {
   const { userId } = await auth();
 
   if (!userId) {
     redirect("/sign-in");
   }
+
+  const params = await searchParams;
+  const status = params.status?.trim() || "";
+  const decision = params.decision?.trim() || "";
+  const q = params.q?.trim() || "";
+  const safeQ = q.replace(/,/g, "").trim();
 
   const email = await getCurrentUserEmail();
   const adminEmail = process.env.ADMIN_EMAIL || "";
@@ -81,10 +115,27 @@ export default async function AdminPage() {
 
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("submissions")
-    .select("*")
-    .order("created_at", { ascending: false });
+  let query = supabase
+  .from("submissions")
+  .select("*")
+  .is("deleted_at", null)
+  .order("created_at", { ascending: false });
+
+  if (status) {
+    query = query.eq("status", status);
+  }
+
+  if (decision) {
+    query = query.eq("final_decision", decision);
+  }
+
+  if (safeQ) {
+    query = query.or(
+      `reference_id.ilike.%${safeQ}%,contact_email.ilike.%${safeQ}%,file_name.ilike.%${safeQ}%`
+    );
+  }
+
+  const { data, error } = await query;
 
   const submissions = (data || []) as Submission[];
 
@@ -117,12 +168,242 @@ export default async function AdminPage() {
             </p>
           </div>
 
-          <a
-            href="/dashboard"
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
-          >
-            Back to Dashboard
-          </a>
+          <div className="flex items-center gap-2">
+  <a
+    href="/admin/trash"
+    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+  >
+    View Trash
+  </a>
+
+  <a
+    href="/dashboard"
+    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+  >
+    Back to Dashboard
+  </a>
+</div>
+        </div>
+
+        <div className="mb-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-900">Filters</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Narrow the admin view by status, final decision, or search term.
+          </p>
+
+          <form method="GET" className="mt-5 grid gap-4 md:grid-cols-4">
+            <div>
+              <label
+                htmlFor="status"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
+                Status
+              </label>
+              <select
+                id="status"
+                name="status"
+                defaultValue={status}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+              >
+                <option value="">All statuses</option>
+                <option value="pending">pending</option>
+                <option value="reviewed">reviewed</option>
+                <option value="flagged">flagged</option>
+                <option value="escalated">escalated</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="decision"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
+                Final decision
+              </label>
+              <select
+                id="decision"
+                name="decision"
+                defaultValue={decision}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+              >
+                <option value="">All decisions</option>
+                <option value="clear">clear</option>
+                <option value="caution">caution</option>
+                <option value="suspicious">suspicious</option>
+                <option value="escalate">escalate</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="q"
+                className="mb-1 block text-sm font-medium text-slate-700"
+              >
+                Search
+              </label>
+              <input
+                id="q"
+                name="q"
+                type="text"
+                defaultValue={q}
+                placeholder="Reference ID, email, file name"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+              />
+            </div>
+
+            <div className="flex items-end gap-2">
+              <button
+                type="submit"
+                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+              >
+                Apply
+              </button>
+
+              <a
+                href="/admin"
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+              >
+                Reset
+              </a>
+            </div>
+          </form>
+
+          <div className="mt-4 text-sm text-slate-600">
+            Showing results
+            {status ? ` | Status: ${status}` : ""}
+            {decision ? ` | Decision: ${decision}` : ""}
+            {q ? ` | Search: "${q}"` : ""}
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a
+              href="/admin"
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                !status
+                  ? "border border-slate-900 bg-slate-900 text-white"
+                  : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              All
+            </a>
+
+            <a
+              href="/admin?status=pending"
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                status === "pending"
+                  ? "border border-amber-800 bg-amber-600 text-white"
+                  : "border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
+              }`}
+            >
+              Pending
+            </a>
+
+            <a
+              href="/admin?status=reviewed"
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                status === "reviewed"
+                  ? "border border-emerald-800 bg-emerald-600 text-white"
+                  : "border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+              }`}
+            >
+              Reviewed
+            </a>
+
+            <a
+              href="/admin?status=flagged"
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                status === "flagged"
+                  ? "border border-red-800 bg-red-600 text-white"
+                  : "border border-red-200 bg-red-50 text-red-800 hover:bg-red-100"
+              }`}
+            >
+              Flagged
+            </a>
+
+            <a
+              href="/admin?status=escalated"
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                status === "escalated"
+                  ? "border border-red-800 bg-red-600 text-white"
+                  : "border border-red-200 bg-red-50 text-red-800 hover:bg-red-100"
+              }`}
+            >
+              Escalated
+            </a>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a
+              href={status ? `/admin?status=${status}` : "/admin"}
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                !decision
+                  ? "border border-slate-900 bg-slate-900 text-white"
+                  : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+              }`}
+            >
+              All decisions
+            </a>
+
+            <a
+              href={
+                status
+                  ? `/admin?status=${status}&decision=clear`
+                  : "/admin?decision=clear"
+              }
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                decision === "clear"
+                  ? "border border-emerald-800 bg-emerald-600 text-white"
+                  : "border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+              }`}
+            >
+              Clear
+            </a>
+
+            <a
+              href={
+                status
+                  ? `/admin?status=${status}&decision=caution`
+                  : "/admin?decision=caution"
+              }
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                decision === "caution"
+                  ? "border border-amber-800 bg-amber-600 text-white"
+                  : "border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
+              }`}
+            >
+              Caution
+            </a>
+
+            <a
+              href={
+                status
+                  ? `/admin?status=${status}&decision=suspicious`
+                  : "/admin?decision=suspicious"
+              }
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                decision === "suspicious"
+                  ? "border border-red-800 bg-red-600 text-white"
+                  : "border border-red-200 bg-red-50 text-red-800 hover:bg-red-100"
+              }`}
+            >
+              Suspicious
+            </a>
+
+            <a
+              href={
+                status
+                  ? `/admin?status=${status}&decision=escalate`
+                  : "/admin?decision=escalate"
+              }
+              className={`rounded-full px-3 py-1 text-sm transition ${
+                decision === "escalate"
+                  ? "border border-red-800 bg-red-600 text-white"
+                  : "border border-red-200 bg-red-50 text-red-800 hover:bg-red-100"
+              }`}
+            >
+              Escalate
+            </a>
+          </div>
         </div>
 
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -137,7 +418,7 @@ export default async function AdminPage() {
 
           <div className="p-6">
             {submissions.length === 0 ? (
-              <p className="text-sm text-slate-600">No submissions yet.</p>
+              <p className="text-sm text-slate-600">No submissions found.</p>
             ) : (
               <div className="space-y-4">
                 {submissions.map((item) => (
@@ -169,14 +450,26 @@ export default async function AdminPage() {
                             : "N/A"}
                         </p>
 
-                        <div className="pt-2">
-                          <a
-                            href={`/admin/submissions/${item.id}`}
-                            className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100"
-                          >
-                            Open Detail
-                          </a>
-                        </div>
+                        <div className="pt-2 flex flex-wrap gap-2">
+  <a
+    href={`/admin/submissions/${item.id}`}
+    className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100"
+  >
+    Open Detail
+  </a>
+
+  <form
+  action={`/api/submissions/${item.id}/delete`}
+  method="POST"
+>
+  <button
+    type="submit"
+    className="inline-flex items-center rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+  >
+    Delete
+  </button>
+</form>
+</div>
                       </div>
 
                       <div className="min-w-[220px] space-y-3">
@@ -186,6 +479,14 @@ export default async function AdminPage() {
                           )}`}
                         >
                           {item.status || "pending"}
+                        </div>
+
+                        <div
+                          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${formatDecision(
+                            item.final_decision
+                          )}`}
+                        >
+                          {item.final_decision || "no decision"}
                         </div>
 
                         <form

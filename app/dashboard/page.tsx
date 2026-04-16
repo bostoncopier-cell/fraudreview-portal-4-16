@@ -1,9 +1,8 @@
+export const dynamic = "force-dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
-
-const BRAND_LOGO =
-  "https://fraudrisklevel-com.okyanust.com/wp-content/uploads/2026/04/fraud-review_clipped_rev_1.png";
+import LogoBadge from "@/app/components/logo-badge";
 
 type Submission = {
   id: number;
@@ -52,6 +51,7 @@ export default async function DashboardPage() {
     .from("submissions")
     .select("*")
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   const submissions = (data || []) as Submission[];
@@ -71,34 +71,7 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-[#f8f8f6]">
-      <header className="border-b border-[#e7e1d3] bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 md:px-6">
-          <div className="flex min-w-0 items-center gap-4">
-            <img
-              src={BRAND_LOGO}
-              alt="Fraud Review"
-              className="h-12 w-auto md:h-14"
-            />
-            <div className="hidden sm:block">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#b88917]">
-                Fraud Review
-              </p>
-              <p className="text-sm font-medium text-[#24344d]">
-                Review Dashboard
-              </p>
-            </div>
-          </div>
-
-          <a
-            href="/submit"
-            className="inline-flex items-center justify-center rounded-xl border border-[#d6c39a] bg-white px-4 py-2 text-sm font-medium text-[#24344d] transition hover:bg-[#fbf7ee]"
-          >
-            New Submission
-          </a>
-        </div>
-      </header>
-
-      <div className="px-4 py-8 md:px-6 md:py-10">
+      <div className="mt-6 px-4 py-8 md:px-6 md:py-10">
         <div className="mx-auto mb-6 max-w-6xl overflow-hidden rounded-3xl border border-[#d6c39a] bg-gradient-to-r from-[#0b1f3a] to-[#1a355a] shadow-sm">
           <div className="grid gap-6 px-6 py-8 md:grid-cols-[1.15fr_0.85fr] md:px-8">
             <div>
@@ -115,16 +88,26 @@ export default async function DashboardPage() {
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e7c76a]">
-                Signed in as
-              </p>
-              <p className="mt-2 truncate text-sm font-medium text-white">
-                {email}
-              </p>
-              <div className="mt-4 inline-flex rounded-full bg-[#4caf50]/15 px-3 py-1 text-xs font-medium text-[#bfe6c3]">
-                Protected workspace
-              </div>
-            </div>
+  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#e7c76a]">
+    Signed in as
+  </p>
+  <p className="mt-2 truncate text-sm font-medium text-white">
+    {email}
+  </p>
+
+  <div className="mt-4 flex flex-col gap-2">
+    <div className="inline-flex rounded-full bg-[#4caf50]/15 px-3 py-1 text-xs font-medium text-[#bfe6c3]">
+      Protected workspace
+    </div>
+
+    <a
+      href="/dashboard/trash"
+      className="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium text-white hover:bg-white/20"
+    >
+      View Trash
+    </a>
+  </div>
+</div>
           </div>
         </div>
 
@@ -160,22 +143,27 @@ export default async function DashboardPage() {
 
           <div className="rounded-3xl border border-[#e7e1d3] bg-white shadow-sm">
             <div className="border-b border-[#f0eadf] p-6">
-              <h2 className="text-2xl font-semibold text-[#0b1f3a]">
-                Your submissions
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Only files uploaded under your signed-in account appear here.
-              </p>
+              <div className="flex items-center gap-3">
+                <LogoBadge size={48} />
+                <div>
+                  <h2 className="text-2xl font-semibold text-[#0b1f3a]">
+                    Your submissions
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Only files uploaded under your signed-in account appear
+                    here.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="p-6">
               {submissions.length > 0 ? (
                 <div className="grid gap-4">
                   {submissions.map((item) => (
-                    <a
+                    <div
                       key={item.id}
-                      href={`/dashboard/${item.id}`}
-                      className="block rounded-2xl border border-slate-200 bg-[#fffdf9] p-5 transition hover:border-[#d6c39a]"
+                      className="rounded-2xl border border-slate-200 bg-[#fffdf9] p-5 transition hover:border-[#d6c39a]"
                     >
                       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                         <div className="space-y-2">
@@ -201,14 +189,36 @@ export default async function DashboardPage() {
                           >
                             {item.status || "pending"}
                           </div>
+
                           <p className="text-sm text-slate-500">
                             {item.created_at
                               ? new Date(item.created_at).toLocaleString()
                               : ""}
                           </p>
+
+                          <div className="flex flex-wrap gap-2 md:justify-end">
+                            <a
+                              href={`/dashboard/${item.id}`}
+                              className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100"
+                            >
+                              Open Detail
+                            </a>
+
+                            <form
+                              action={`/api/dashboard-submissions/${item.id}/delete`}
+                              method="POST"
+                            >
+                              <button
+                                type="submit"
+                                className="inline-flex items-center rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                              >
+                                Delete
+                              </button>
+                            </form>
+                          </div>
                         </div>
                       </div>
-                    </a>
+                    </div>
                   ))}
                 </div>
               ) : (

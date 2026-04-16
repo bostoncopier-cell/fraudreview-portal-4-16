@@ -51,6 +51,51 @@ function formatDecision(decision: string | null) {
   return "bg-slate-100 text-slate-700 border border-slate-200";
 }
 
+function getStatusMessage(status: string | null) {
+  switch ((status || "").toLowerCase()) {
+    case "pending":
+      return "Your submission has been received and is awaiting review.";
+    case "reviewed":
+      return "Your submission has been reviewed by our team.";
+    case "flagged":
+      return "Your submission contains indicators that deserve closer attention.";
+    case "escalated":
+      return "Your submission has been escalated for further analysis.";
+    default:
+      return "Your submission is being processed.";
+  }
+}
+
+function getNextStepMessage(decision: string | null, status: string | null) {
+  const normalizedDecision = (decision || "").toLowerCase();
+  const normalizedStatus = (status || "").toLowerCase();
+
+  if (!normalizedDecision) {
+    if (normalizedStatus === "pending") {
+      return "No action is needed right now. Our team is still reviewing your submission.";
+    }
+
+    if (normalizedStatus === "escalated") {
+      return "Your submission is receiving additional attention. Please wait for the review process to continue.";
+    }
+
+    return "A final recommendation will appear here once the review is complete.";
+  }
+
+  switch (normalizedDecision) {
+    case "clear":
+      return "No significant issues were identified. You may proceed, but continue using normal caution and verification.";
+    case "caution":
+      return "Some warning signs were detected. We recommend verifying all details carefully before taking further action.";
+    case "suspicious":
+      return "Multiple risk indicators were identified. Proceed very carefully and independently verify all information before responding or sending funds.";
+    case "escalate":
+      return "Further review is recommended before taking action. Consider pausing the transaction until additional verification is completed.";
+    default:
+      return "A final recommendation will appear here once the review is complete.";
+  }
+}
+
 export default async function SubmissionDetailPage({
   params,
 }: {
@@ -80,8 +125,8 @@ export default async function SubmissionDetailPage({
 
   return (
     <main className="min-h-screen bg-slate-50 p-6">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-8 flex items-center justify-between gap-4">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
               Fraud Review Portal
@@ -90,7 +135,7 @@ export default async function SubmissionDetailPage({
               Submission Detail
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Review the full details of this submission.
+              Review the status and outcome of your submission.
             </p>
           </div>
 
@@ -102,131 +147,106 @@ export default async function SubmissionDetailPage({
           </a>
         </div>
 
-        <div className="grid gap-6">
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="text-sm text-slate-500">File name</p>
-                <h2 className="mt-1 text-2xl font-semibold text-slate-900">
-                  {submission.file_name || "Unnamed file"}
-                </h2>
-              </div>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-sm uppercase tracking-[0.2em] text-slate-500">
+            Submission Details
+          </p>
 
-              <div className="flex flex-wrap gap-2">
-                <div
-                  className={`inline-flex h-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${formatStatus(
-                    submission.status
-                  )}`}
-                >
-                  Status: {submission.status || "pending"}
-                </div>
+          <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+            {submission.file_name || "Submitted File"}
+          </h2>
 
-                <div
-                  className={`inline-flex h-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${formatDecision(
-                    submission.final_decision
-                  )}`}
-                >
-                  Decision: {submission.final_decision || "not set"}
-                </div>
-              </div>
+          <p className="mt-2 text-sm text-slate-600">
+            Reference ID: {submission.reference_id}
+          </p>
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-slate-900">Review Status</h3>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <div
+              className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${formatStatus(
+                submission.status
+              )}`}
+            >
+              {submission.status || "pending"}
+            </div>
+
+            <div
+              className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${formatDecision(
+                submission.final_decision
+              )}`}
+            >
+              {submission.final_decision || "no decision"}
             </div>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Submission info
-              </h3>
+          <p className="mt-4 text-sm text-slate-600">
+            {getStatusMessage(submission.status)}
+          </p>
+        </div>
 
-              <div className="mt-5 space-y-4">
-                <div>
-                  <p className="text-sm text-slate-500">Reference ID</p>
-                  <p className="mt-1 font-medium text-slate-900">
-                    {submission.reference_id || "N/A"}
-                  </p>
-                </div>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-slate-900">
+            Submission Overview
+          </h3>
 
-                <div>
-                  <p className="text-sm text-slate-500">Transaction type</p>
-                  <p className="mt-1 font-medium text-slate-900 capitalize">
-                    {submission.transaction_type || "N/A"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-slate-500">Contact email</p>
-                  <p className="mt-1 font-medium text-slate-900">
-                    {submission.contact_email || "N/A"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-slate-500">Submitted</p>
-                  <p className="mt-1 font-medium text-slate-900">
-                    {submission.created_at
-                      ? new Date(submission.created_at).toLocaleString()
-                      : "N/A"}
-                  </p>
-                </div>
-              </div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-sm text-slate-500">Submitted</p>
+              <p className="mt-1 font-medium text-slate-900">
+                {submission.created_at
+                  ? new Date(submission.created_at).toLocaleString()
+                  : "N/A"}
+              </p>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900">
-                Review summary
-              </h3>
+            <div>
+              <p className="text-sm text-slate-500">Contact Email</p>
+              <p className="mt-1 font-medium text-slate-900">
+                {submission.contact_email || "N/A"}
+              </p>
+            </div>
 
-              <div className="mt-5 space-y-4 text-sm text-slate-600">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="font-medium text-slate-900">Final decision</p>
-                  <div className="mt-2">
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${formatDecision(
-                        submission.final_decision
-                      )}`}
-                    >
-                      {submission.final_decision || "not set"}
-                    </span>
-                  </div>
-                </div>
+            <div>
+              <p className="text-sm text-slate-500">Transaction Type</p>
+              <p className="mt-1 font-medium capitalize text-slate-900">
+                {submission.transaction_type || "N/A"}
+              </p>
+            </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="font-medium text-slate-900">Analyst notes</p>
-                  {submission.review_notes ? (
-                    <p className="mt-2 whitespace-pre-wrap text-slate-700">
-                      {submission.review_notes}
-                    </p>
-                  ) : (
-                    <p className="mt-2 text-slate-500">
-                      No analyst notes have been added yet.
-                    </p>
-                  )}
-                </div>
-
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4">
-                  <p className="font-medium text-slate-900">
-                    Placeholder: AI summary
-                  </p>
-                  <p className="mt-2">
-                    No structured analysis has been saved to this record yet.
-                  </p>
-                </div>
-              </div>
+            <div>
+              <p className="text-sm text-slate-500">Reference ID</p>
+              <p className="mt-1 font-medium text-slate-900">
+                {submission.reference_id || "N/A"}
+              </p>
             </div>
           </div>
+        </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900">
-              What comes next
-            </h3>
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-slate-900">Analyst Notes</h3>
 
-            <div className="mt-4 space-y-3 text-sm text-slate-600">
-              <p>Next upgrade ideas for this page:</p>
-              <p>• Risk signals and AI summary</p>
-              <p>• Admin-only review actions</p>
-              <p>• Supporting documents or attachments</p>
-            </div>
-          </div>
+          {submission.review_notes ? (
+            <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+              {submission.review_notes}
+            </p>
+          ) : (
+            <p className="mt-4 text-sm text-slate-500">
+              No notes have been added yet. Once your review is complete, any relevant notes will appear here.
+            </p>
+          )}
+        </div>
+
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-slate-900">
+            Recommended Next Step
+          </h3>
+
+          <p className="mt-4 text-sm leading-6 text-slate-700">
+            {getNextStepMessage(submission.final_decision, submission.status)}
+          </p>
         </div>
       </div>
     </main>

@@ -1,6 +1,61 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
 import { createAdminClient } from "@/lib/supabase-admin";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+function getTransactionLabel(transactionType: string) {
+  return transactionType
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+async function sendSubmissionConfirmationEmail({
+  to,
+  referenceId,
+  fileName,
+  transactionType,
+  requestUrl,
+}: {
+  to: string;
+  referenceId: string;
+  fileName: string;
+  transactionType: string;
+  requestUrl: string;
+}) {
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL || new URL(requestUrl).origin;
+
+  const dashboardUrl = `${appUrl}/dashboard`;
+
+  return await resend.emails.send({
+    from: "Fraud Review <onboarding@resend.dev>",
+    to: [to],
+    subject: "We received your Fraud Review submission",
+    html: `
+      <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
+        <h2 style="margin-bottom: 12px;">We received your submission</h2>
+
+        <p>Thank you. Your submission has been received and added to the review queue.</p>
+
+        <div style="margin: 20px 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc;">
+          <p style="margin: 0 0 8px;"><strong>Reference ID:</strong> ${referenceId}</p>
+          <p style="margin: 0 0 8px;"><strong>File:</strong> ${fileName}</p>
+          <p style="margin: 0;"><strong>Transaction Type:</strong> ${getTransactionLabel(transactionType)}</p>
+        </div>
+
+        <p>Your submission is currently marked as <strong>Pending</strong>. We will notify you when your review has been updated.</p>
+
+        <p style="margin-top: 20px;">
+          <a href="${dashboardUrl}" style="display: inline-block; padding: 10px 16px; background: #0f172a; color: #ffffff; text-decoration: none; border-radius: 10px;">
+            View Dashboard
+          </a>
+        </p>
+      </div>
+    `,
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -63,8 +118,8 @@ export async function POST(request: Request) {
         typeof backendData?.detail === "string"
           ? backendData.detail
           : backendData?.detail
-          ? JSON.stringify(backendData.detail)
-          : "Upload failed.";
+            ? JSON.stringify(backendData.detail)
+            : "Upload failed.";
 
       return NextResponse.json({ detail }, { status: backendResponse.status });
     }
@@ -90,6 +145,27 @@ export async function POST(request: Request) {
         },
         { status: 500 }
       );
+    }
+
+    if (contactEmail.trim()) {
+      try {
+        const recipient =
+          process.env.NODE_ENV === "development"
+            ? "bostoncopier@gmail.com"
+            : contactEmail.trim();
+
+        const emailResult = await sendSubmissionConfirmationEmail({
+          to: recipient,
+          referenceId: submissionId,
+          fileName: file.name,
+          transactionType,
+          requestUrl: request.url,
+        });
+
+        console.log("SUBMISSION EMAIL RESULT:", emailResult);
+      } catch (emailError) {
+        console.error("Submission confirmation email failed:", emailError);
+      }
     }
 
     return NextResponse.json({
