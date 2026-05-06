@@ -32,8 +32,18 @@ type Submission = {
   file_name: string | null;
   status: string | null;
   created_at: string | null;
+
   review_notes?: string | null;
   final_decision?: string | null;
+
+  final_risk_level?: string | null;
+  report_summary?: string | null;
+  recommendations?: string | null;
+  expert_notes?: string | null;
+  reviewer_name?: string | null;
+  reviewer_title?: string | null;
+  report_status?: string | null;
+
   ai_result_json?: AIResult | null;
 };
 
@@ -212,12 +222,21 @@ export default async function AdminSubmissionDetailPage({
             </p>
           </div>
 
-          <a
-            href="/admin"
-            className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
-          >
-            Back to Admin
-          </a>
+          <div className="flex flex-wrap gap-2">
+  <a
+    href="/admin"
+    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+  >
+    Back to Admin
+  </a>
+
+  <a
+    href={`/admin/submissions/${submission.id}/report`}
+    className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+  >
+    View / Print Report
+  </a>
+</div>
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -542,10 +561,10 @@ export default async function AdminSubmissionDetailPage({
             <h3 className="text-lg font-semibold text-slate-900">
               Review Workspace
             </h3>
-            <p className="mt-2 text-sm text-slate-600">
-              Update the submission status, save notes, and assign a final
-              decision.
-            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+  Complete the fraud review workflow, finalize the risk assessment,
+  document findings, and prepare the structured fraud review report.
+</p>
 
             <form
               action="/api/admin/submissions"
@@ -632,7 +651,159 @@ export default async function AdminSubmissionDetailPage({
                   </p>
                 </div>
               </div>
+<div>
+  <label
+    htmlFor="final_risk_level"
+    className="block text-sm font-medium text-slate-900"
+  >
+    Final Risk Level
+  </label>
 
+  <select
+    id="final_risk_level"
+    name="final_risk_level"
+    defaultValue={submission.final_risk_level || ""}
+    className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+  >
+    <option value="">Not set</option>
+    <option value="Low Risk">Low Risk</option>
+    <option value="Moderate Risk">Moderate Risk</option>
+    <option value="Elevated Risk">Elevated Risk</option>
+    <option value="High Risk">High Risk</option>
+    <option value="Critical Risk">Critical Risk</option>
+  </select>
+</div>
+<div>
+  <label
+    htmlFor="report_summary"
+    className="block text-sm font-medium text-slate-900"
+  >
+    Executive Summary
+  </label>
+
+  <textarea
+    id="report_summary"
+    name="report_summary"
+    defaultValue={submission.report_summary || ai?.summary || ""}
+    placeholder="Summarize the overall findings and fraud concerns..."
+    className="mt-2 min-h-[180px] w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900"
+  />
+</div>
+<div>
+  <label
+    htmlFor="recommendations"
+    className="block text-sm font-medium text-slate-900"
+  >
+    Recommendations & Remediation
+  </label>
+
+  <textarea
+    id="recommendations"
+    name="recommendations"
+    defaultValue={
+  submission.recommendations ||
+  [
+    ai?.requires_escalation
+      ? "Escalate this submission for additional verification and specialist review."
+      : null,
+
+    ...(ai?.recommended_human_actions || []),
+
+    ai?.signals_detected?.includes("payment_change_request")
+      ? "Independently verify all payment instruction changes using a trusted phone number or verified contact method."
+      : null,
+
+    ai?.signals_detected?.includes("urgency_language")
+      ? "Do not act under pressure or urgency without secondary verification."
+      : null,
+
+    ai?.signals_detected?.includes("suspicious_domain")
+      ? "Verify sender domain legitimacy and inspect for impersonation indicators."
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n\n")
+}
+    placeholder="Document recommended actions, verification steps, escalation guidance, or remediation recommendations..."
+    className="mt-2 min-h-[220px] w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900"
+  />
+</div>
+<div>
+  <label
+    htmlFor="expert_notes"
+    className="block text-sm font-medium text-slate-900"
+  >
+    Fraud Expert Notes
+  </label>
+
+  <textarea
+    id="expert_notes"
+    name="expert_notes"
+    defaultValue={
+  submission.expert_notes ||
+  [
+    ai?.reasoning_summary
+      ? `AI Review Summary:\n${ai.reasoning_summary}`
+      : null,
+
+    ai?.signals_detected?.length
+      ? `\nPotential Risk Indicators:\n- ${ai.signals_detected.join("\n- ")}`
+      : null,
+
+    extracted?.sender
+      ? `\nSender Observed:\n${extracted.sender}`
+      : null,
+
+    extracted?.subject
+      ? `\nEmail Subject:\n${extracted.subject}`
+      : null,
+
+    ai?.requires_escalation
+      ? `\nEscalation Consideration:\nAI analysis suggests this submission may warrant additional review or verification before action is taken.`
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n\n")
+}
+    placeholder="Add expert review commentary, contextual observations, and professional findings..."
+    className="mt-2 min-h-[220px] w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm text-slate-900"
+  />
+</div>
+<div className="grid gap-5 sm:grid-cols-2">
+  <div>
+    <label
+      htmlFor="reviewer_name"
+      className="block text-sm font-medium text-slate-900"
+    >
+      Reviewer Name
+    </label>
+
+    <input
+      id="reviewer_name"
+      name="reviewer_name"
+      defaultValue={submission.reviewer_name || ""}
+      placeholder="Reviewer name"
+      className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+    />
+  </div>
+
+  <div>
+    <label
+      htmlFor="reviewer_title"
+      className="block text-sm font-medium text-slate-900"
+    >
+      Reviewer Title
+    </label>
+
+    <input
+      id="reviewer_title"
+      name="reviewer_title"
+      defaultValue={submission.reviewer_title || ""}
+      placeholder="Certified Fraud Examiner"
+      className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+    />
+  </div>
+</div>
               <div>
                 <label
                   htmlFor="review_notes"
@@ -664,7 +835,7 @@ export default async function AdminSubmissionDetailPage({
                 type="submit"
                 className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
               >
-                Save Review
+                Save Fraud Review Report
               </button>
             </form>
 

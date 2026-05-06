@@ -73,6 +73,7 @@ export default function SubmitPage() {
   const [submissionId, setSubmissionId] = useState<string | null>(null);
 
   const { user } = useUser();
+  const isSignedIn = !!user;
 
   const isValidEmail = useMemo(() => /\S+@\S+\.\S+/.test(email), [email]);
 
@@ -106,6 +107,10 @@ export default function SubmitPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+if (!isSignedIn) {
+  window.location.href = "/sign-in";
+  return;
+}
     if (!isFormValid || !file) {
       setState("error");
       setMessage(
@@ -133,10 +138,15 @@ export default function SubmitPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setState("error");
-        setMessage(data.detail || "Upload failed");
-        return;
-      }
+  if (res.status === 401) {
+    window.location.href = "/sign-in";
+    return;
+  }
+
+  setState("error");
+  setMessage(data.detail || "Upload failed");
+  return;
+}
 
       setState("success");
       setSubmissionId(data.submission_id || null);
@@ -345,7 +355,7 @@ export default function SubmitPage() {
                   ) : (
                     <>
                       <FileUp className="h-4 w-4" />
-                      Submit for Review
+                     {isSignedIn ? "Submit for Review" : "Sign In to Submit"}
                     </>
                   )}
                 </button>

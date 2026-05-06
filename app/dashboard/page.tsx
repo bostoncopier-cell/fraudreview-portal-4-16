@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase-server";
+import { createAdminClient } from "@/lib/supabase-admin";
 import LogoBadge from "@/app/components/logo-badge";
 
 type Submission = {
@@ -45,7 +45,7 @@ export default async function DashboardPage() {
     (sessionClaims?.primaryEmailAddress as string | undefined) ||
     "Signed-in user";
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("submissions")
@@ -197,12 +197,13 @@ export default async function DashboardPage() {
                           </p>
 
                           <div className="flex flex-wrap gap-2 md:justify-end">
+                            
                             <a
-                              href={`/dashboard/${item.id}`}
-                              className="inline-flex items-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-100"
-                            >
-                              Open Detail
-                            </a>
+  href={`/dashboard-submissions/${item.id}/report`}
+  className="inline-flex items-center rounded-xl border border-slate-900 bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+>
+  View Report
+</a>
 
                             <form
                               action={`/api/dashboard-submissions/${item.id}/delete`}

@@ -105,7 +105,10 @@ export async function POST(request: Request) {
     });
 
     const rawText = await backendResponse.text();
+    console.log("FASTAPI RAW RESPONSE:", rawText);
+
     let backendData: any = null;
+    
 
     try {
       backendData = rawText ? JSON.parse(rawText) : null;
@@ -128,15 +131,23 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient();
 
-    const { error: insertError } = await supabase.from("submissions").insert({
-      user_id: userId,
-      reference_id: submissionId,
-      contact_email: contactEmail,
-      transaction_type: transactionType,
-      file_name: file.name,
-      status: "pending",
-      created_at: new Date().toISOString(),
-    });
+    const aiResult =
+  backendData?.ai_result ||
+  backendData?.ai_result_json ||
+  backendData?.analysis ||
+  backendData?.result ||
+  null;
+
+const { error: insertError } = await supabase.from("submissions").insert({
+  user_id: userId,
+  reference_id: submissionId,
+  contact_email: contactEmail,
+  transaction_type: transactionType,
+  file_name: file.name,
+  status: aiResult ? "awaiting_human_review" : "pending",
+  ai_result_json: aiResult,
+  created_at: new Date().toISOString(),
+});
 
     if (insertError) {
       return NextResponse.json(

@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase-server";
+import { createAdminClient } from "@/lib/supabase-admin";
 
 type Submission = {
   id: number;
@@ -113,7 +113,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     );
   }
 
-  const supabase = await createClient();
+ const supabase = createAdminClient();
 
   let query = supabase
   .from("submissions")
@@ -457,7 +457,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   >
     Open Detail
   </a>
-
+<a
+  href={`/admin/submissions/${item.id}/report`}
+  className="inline-flex items-center rounded-xl border border-slate-900 bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+>
+  View Report
+</a>
   <form
   action={`/api/submissions/${item.id}/delete`}
   method="POST"

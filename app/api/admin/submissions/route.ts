@@ -180,12 +180,18 @@ export async function POST(request: Request) {
     const reviewNotes = formData.get("review_notes");
     const finalDecision = formData.get("final_decision");
     const redirectTo = formData.get("redirect_to");
+    const finalRiskLevel = formData.get("final_risk_level");
+const reportSummary = formData.get("report_summary");
+const recommendations = formData.get("recommendations");
+const expertNotes = formData.get("expert_notes");
+const reviewerName = formData.get("reviewer_name");
+const reviewerTitle = formData.get("reviewer_title");
 
     if (typeof id !== "string" || !id) {
       return NextResponse.json({ detail: "Invalid request." }, { status: 400 });
     }
 
-    const updates: Record<string, string> = {};
+    const updates: Record<string, string | null> = {};
 
     if (typeof status === "string" && status) {
       const allowedStatuses = ["pending", "reviewed", "flagged", "escalated"];
@@ -210,6 +216,31 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
+      if (typeof finalRiskLevel === "string") {
+  updates.final_risk_level = finalRiskLevel;
+}
+
+if (typeof reportSummary === "string") {
+  updates.report_summary = reportSummary;
+}
+
+if (typeof recommendations === "string") {
+  updates.recommendations = recommendations;
+}
+
+if (typeof expertNotes === "string") {
+  updates.expert_notes = expertNotes;
+}
+
+if (typeof reviewerName === "string") {
+  updates.reviewer_name = reviewerName;
+}
+
+if (typeof reviewerTitle === "string") {
+  updates.reviewer_title = reviewerTitle;
+}
+
+updates.report_status = "draft";
 
       updates.final_decision = finalDecision;
     }
