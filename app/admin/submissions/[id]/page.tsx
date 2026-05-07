@@ -278,8 +278,8 @@ export default async function AdminSubmissionDetailPage({
 
               <div
                 className={`inline-flex h-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${formatDecision(
-                  submission.final_decision
-                )}`}
+  submission.final_decision || null
+)}`}
               >
                 Decision: {submission.final_decision || "not set"}
               </div>
@@ -535,8 +535,8 @@ export default async function AdminSubmissionDetailPage({
                   <div className="mt-3">
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${formatDecision(
-                        submission.final_decision
-                      )}`}
+  submission.final_decision || null
+)}`}
                     >
                       {submission.final_decision || "not set"}
                     </span>
@@ -548,7 +548,7 @@ export default async function AdminSubmissionDetailPage({
                     Decision Guidance
                   </p>
                   <p className="mt-3 text-sm leading-6 text-slate-700">
-                    {getDecisionGuidance(submission.final_decision)}
+                    {getDecisionGuidance(submission.final_decision || null)}
                   </p>
                 </div>
 

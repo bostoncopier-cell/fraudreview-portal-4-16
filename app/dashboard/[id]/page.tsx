@@ -175,8 +175,8 @@ export default async function SubmissionDetailPage({
 
             <div
               className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${formatDecision(
-                submission.final_decision
-              )}`}
+  submission.final_decision || null
+)}`}
             >
               {submission.final_decision || "no decision"}
             </div>
@@ -245,7 +245,10 @@ export default async function SubmissionDetailPage({
           </h3>
 
           <p className="mt-4 text-sm leading-6 text-slate-700">
-            {getNextStepMessage(submission.final_decision, submission.status)}
+            {getNextStepMessage(
+  submission.final_decision || null,
+  submission.status || null
+)}
           </p>
         </div>
       </div>

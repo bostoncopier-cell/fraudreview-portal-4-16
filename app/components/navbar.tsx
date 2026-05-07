@@ -58,7 +58,7 @@ export default function Navbar() {
           </nav>
 
           <div className="ml-1 rounded-full border border-white/10 bg-white/5 p-1 shadow-sm">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase-admin";
-import PrintButton from "@/app/admin/submissions/[id]/report/PrintButton";
+import ReportButtons from "../../../components/ReportButtons";
 
 type Submission = {
   id: string | number;
@@ -66,7 +66,7 @@ export default async function CustomerSubmissionReportPage({
             Back to Dashboard
           </a>
 
-          <PrintButton />
+          <ReportButtons />
         </div>
 
         <section className="border-b border-slate-300 pb-6">

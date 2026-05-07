@@ -1,4 +1,4 @@
-import ReportButtons from "@/app/components/ReportButtons";
+import ReportButtons from "../../../../components/ReportButtons";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase-admin";
@@ -81,7 +81,7 @@ export default async function AdminSubmissionReportPage({
             Back to Review
           </a>
 
-          <PrintButton />
+          <ReportButtons />
         </div>
 
         <section className="border-b border-slate-300 pb-6">
