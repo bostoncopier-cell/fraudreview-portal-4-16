@@ -1,4 +1,4 @@
-import ReportButtons from "../../../../components/ReportButtons";
+import ReportButtons from "@/app/components/ReportButtons";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase-admin";

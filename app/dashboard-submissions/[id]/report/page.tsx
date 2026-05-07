@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase-admin";
-import ReportButtons from "../../../components/ReportButtons";
+import ReportButtons from "@/app/components/ReportButtons";
 
 type Submission = {
   id: string | number;
