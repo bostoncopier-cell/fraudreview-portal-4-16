@@ -57,7 +57,10 @@ export default async function CustomerSubmissionReportPage({
 
   return (
     <main className="min-h-screen bg-slate-100 p-6 print:bg-white print:p-0">
-      <div className="mx-auto max-w-5xl rounded-3xl bg-white p-8 shadow-sm print:rounded-none print:shadow-none">
+      <div
+  id="fraud-report"
+  className="mx-auto max-w-5xl rounded-3xl bg-white p-8 shadow-sm print:rounded-none print:shadow-none"
+>
         <div className="mb-6 flex items-center justify-between print:hidden">
           <a
             href="/dashboard"
@@ -70,6 +73,13 @@ export default async function CustomerSubmissionReportPage({
         </div>
 
         <section className="border-b border-slate-300 pb-6">
+          <div className="mb-6 flex justify-center">
+  <img
+    src="/logo.png"
+    alt="Fraud Review"
+    className="w-[420px] max-w-full h-auto print:block"
+  />
+</div>
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">
             Fraud Risk Level
           </p>
