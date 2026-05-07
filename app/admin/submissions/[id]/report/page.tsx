@@ -20,6 +20,7 @@ type Submission = {
   reviewed_at: string | null;
   report_status: string | null;
   created_at: string | null;
+  ai_result_json: any;
 };
 
 function formatDate(value: string | null) {
@@ -59,11 +60,19 @@ export default async function AdminSubmissionReportPage({
     notFound();
   }
 
-  const submission = data as Submission;
+  const submission = {
+    ...data,
+    ai_result_json: data.ai_result_json || {},
+  } as Submission;
+
+  const ai = submission.ai_result_json || {};
 
   return (
     <main className="min-h-screen bg-slate-100 p-6 print:bg-white print:p-0">
-      <div className="mx-auto max-w-5xl rounded-3xl bg-white p-8 shadow-sm print:shadow-none print:rounded-none">
+      <div
+        id="fraud-report"
+        className="mx-auto max-w-5xl rounded-3xl bg-white p-8 shadow-sm print:rounded-none print:shadow-none"
+      >
         <div className="mb-6 flex items-center justify-between print:hidden">
           <a
             href={`/admin/submissions/${submission.id}`}
@@ -76,6 +85,14 @@ export default async function AdminSubmissionReportPage({
         </div>
 
         <section className="border-b border-slate-300 pb-6">
+          <div className="mb-6 flex justify-center">
+  <img
+    src="/logo.png"
+    alt="Fraud Review"
+    className="w-[420px] max-w-full h-auto print:block"
+  />
+</div>
+
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">
             Fraud Risk Level
           </p>
@@ -85,27 +102,35 @@ export default async function AdminSubmissionReportPage({
           </h1>
 
           <p className="mt-3 text-sm text-slate-600">
-            Confidential review report prepared for the submitted fraud review matter.
+            Confidential review report prepared for the submitted fraud review
+            matter.
           </p>
 
           <div className="mt-6 grid gap-3 border border-slate-200 text-sm sm:grid-cols-2">
             <div className="border-b border-slate-200 p-3 sm:border-r">
               <strong>Case Number:</strong> {submission.reference_id || "N/A"}
             </div>
+
             <div className="border-b border-slate-200 p-3">
-              <strong>Report Date:</strong> {formatDate(new Date().toISOString())}
+              <strong>Report Date:</strong>{" "}
+              {formatDate(new Date().toISOString())}
             </div>
+
             <div className="border-b border-slate-200 p-3 sm:border-r">
               <strong>Prepared For:</strong> {submission.contact_email || "N/A"}
             </div>
+
             <div className="border-b border-slate-200 p-3">
               <strong>Prepared By:</strong> Fraud Risk Level
             </div>
+
             <div className="p-3 sm:border-r">
               <strong>Reviewer:</strong> {submission.reviewer_name || "N/A"}
             </div>
+
             <div className="p-3">
-              <strong>Reviewer Title:</strong> {submission.reviewer_title || "N/A"}
+              <strong>Reviewer Title:</strong>{" "}
+              {submission.reviewer_title || "N/A"}
             </div>
           </div>
         </section>
@@ -114,35 +139,48 @@ export default async function AdminSubmissionReportPage({
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-red-700">
             Overall Risk Level
           </p>
+
           <h2 className="mt-2 text-4xl font-bold text-red-800">
-            {submission.final_risk_level || "Not Set"}
+            {submission.final_risk_level || ai.risk_level || "Not Set"}
           </h2>
+
           <p className="mt-2 text-sm text-red-800">
             Final Decision: {submission.final_decision || "Not set"}
           </p>
         </section>
 
         <section className="mt-8">
-          <h2 className="text-xl font-bold text-slate-950">Executive Summary</h2>
+          <h2 className="text-xl font-bold text-slate-950">
+            Executive Summary
+          </h2>
+
           <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
-            {submission.report_summary || "No executive summary has been added yet."}
+            {submission.report_summary ||
+              ai.summary ||
+              ai.reasoning_summary ||
+              "No executive summary has been added yet."}
           </p>
         </section>
 
         <section className="mt-8">
           <h2 className="text-xl font-bold text-slate-950">Scope of Review</h2>
+
           <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-7 text-slate-700">
             <p>
-              Fraud Risk Level reviewed the submitted materials associated with this case,
-              including available file information, transaction context, AI analysis, and
-              fraud expert notes.
+              Fraud Risk Level reviewed the submitted materials associated with
+              this case, including available file information, transaction
+              context, AI analysis, and fraud expert notes.
             </p>
+
             <p className="mt-3">
-              <strong>Transaction Type:</strong> {submission.transaction_type || "N/A"}
+              <strong>Transaction Type:</strong>{" "}
+              {submission.transaction_type || "N/A"}
             </p>
+
             <p>
               <strong>Submitted File:</strong> {submission.file_name || "N/A"}
             </p>
+
             <p>
               <strong>Submitted:</strong>{" "}
               {submission.created_at
@@ -153,9 +191,15 @@ export default async function AdminSubmissionReportPage({
         </section>
 
         <section className="mt-8">
-          <h2 className="text-xl font-bold text-slate-950">Fraud Expert Notes</h2>
+          <h2 className="text-xl font-bold text-slate-950">
+            Fraud Expert Notes
+          </h2>
+
           <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
-            {submission.expert_notes || "No fraud expert notes have been added yet."}
+            {submission.expert_notes ||
+              ai.reasoning_summary ||
+              ai.summary ||
+              "No fraud expert notes have been added yet."}
           </p>
         </section>
 
@@ -163,8 +207,12 @@ export default async function AdminSubmissionReportPage({
           <h2 className="text-xl font-bold text-slate-950">
             Recommendations & Remediation
           </h2>
+
           <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
             {submission.recommendations ||
+              (Array.isArray(ai.recommended_human_actions)
+                ? ai.recommended_human_actions.join("\n\n")
+                : ai.summary) ||
               "No recommendations have been added yet."}
           </p>
         </section>
@@ -173,12 +221,14 @@ export default async function AdminSubmissionReportPage({
           <h2 className="text-xl font-bold text-slate-950">
             Review Limitations / Liability Statement
           </h2>
+
           <p className="mt-3 text-sm leading-7 text-slate-700">
-            This report identifies fraud indicators, inconsistencies, and observed
-            risk concerns based on the materials reviewed. It is not a legal opinion,
-            financial guarantee, law-enforcement determination, or final finding that
-            fraud has or has not occurred. Additional records, technical data,
-            third-party confirmations, or legal review may change the assessment.
+            This report identifies fraud indicators, inconsistencies, and
+            observed risk concerns based on the materials reviewed. It is not a
+            legal opinion, financial guarantee, law-enforcement determination,
+            or final finding that fraud has or has not occurred. Additional
+            records, technical data, third-party confirmations, or legal review
+            may change the assessment.
           </p>
         </section>
 
@@ -210,7 +260,8 @@ export default async function AdminSubmissionReportPage({
         </section>
 
         <footer className="mt-10 border-t border-slate-200 pt-4 text-xs text-slate-500">
-          Page 1 | {submission.reference_id || "N/A"} | Confidential Fraud Review Report
+          Page 1 | {submission.reference_id || "N/A"} | Confidential Fraud
+          Review Report
         </footer>
       </div>
     </main>

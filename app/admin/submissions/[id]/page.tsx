@@ -171,8 +171,10 @@ function renderList(items: string[] | undefined | null, emptyText = "None") {
 
 export default async function AdminSubmissionDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ draft?: string }>;
 }) {
   const { userId } = await auth();
 
@@ -189,6 +191,7 @@ export default async function AdminSubmissionDetailPage({
   }
 
   const { id } = await params;
+  const { draft } = await searchParams;
   const supabase = createAdminClient();
 
   const { data, error } = await supabase
@@ -208,6 +211,17 @@ export default async function AdminSubmissionDetailPage({
   return (
     <main className="min-h-screen bg-slate-50 p-6">
       <div className="mx-auto max-w-6xl space-y-6">
+        {draft === "generated" && (
+  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+    <p className="text-sm font-semibold text-emerald-900">
+      Draft report generated successfully.
+    </p>
+
+    <p className="mt-1 text-sm text-emerald-800">
+      AI-generated report sections have been populated and saved. You can now review and refine the draft before finalizing the report.
+    </p>
+  </div>
+)}
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">
@@ -565,9 +579,54 @@ export default async function AdminSubmissionDetailPage({
   Complete the fraud review workflow, finalize the risk assessment,
   document findings, and prepare the structured fraud review report.
 </p>
+<form
+  action="/api/admin/submissions/generate-draft"
+  method="POST"
+  className="mt-6 rounded-2xl border border-indigo-200 bg-indigo-50 p-4"
+>
+  <input type="hidden" name="id" value={String(submission.id)} />
 
-            <form
-              action="/api/admin/submissions"
+  <p className="text-sm font-semibold text-indigo-900">
+    AI Draft Report
+  </p>
+
+  <p className="mt-2 text-sm leading-6 text-indigo-800">
+    Generate a polished first draft using the saved AI analysis. You can edit the report before finalizing it.
+  </p>
+
+  <button
+    type="submit"
+    className="mt-4 rounded-xl bg-indigo-700 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-800"
+  >
+    Generate Full Draft Report
+  </button>
+</form>
+
+<form
+  action="/api/admin/submissions/finalize-report"
+  method="POST"
+  className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
+>
+  <input type="hidden" name="id" value={String(submission.id)} />
+
+  <p className="text-sm font-semibold text-emerald-900">
+    Finalize Report
+  </p>
+
+  <p className="mt-2 text-sm leading-6 text-emerald-800">
+    Mark this fraud review report as finalized, set the review date, and change the case status to reviewed.
+  </p>
+
+  <button
+    type="submit"
+    className="mt-4 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-800"
+  >
+    Finalize Report
+  </button>
+</form>
+
+<form
+  action="/api/admin/submissions"
               method="POST"
               className="mt-6 space-y-5"
             >

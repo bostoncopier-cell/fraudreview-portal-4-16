@@ -19,7 +19,12 @@ export default function Navbar() {
     pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80">
+   <header
+  className="print:hidden sticky top-0 z-50 border-b border-white/10 backdrop-blur"
+  style={{
+    background: "linear-gradient(90deg, #334155 100%, #475569 0%)",
+  }}
+>
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:px-6">
         <Link href="/" className="flex items-center gap-4">
           <img
