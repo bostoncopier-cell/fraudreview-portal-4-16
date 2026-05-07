@@ -48,9 +48,11 @@ export default function Navbar() {
               Home
             </Link>
 
-            <Link href="/submit" className={navLinkClass(isSubmit)}>
-              Submit
-            </Link>
+            {!isAdmin && (
+  <Link href="/submit" className={navLinkClass(isSubmit)}>
+    Submit
+  </Link>
+)}
 
             <Link href="/dashboard" className={navLinkClass(isDashboard)}>
               Dashboard
