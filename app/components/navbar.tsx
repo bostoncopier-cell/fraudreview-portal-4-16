@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 
 function navLinkClass(isActive: boolean) {
   return isActive
@@ -12,6 +13,11 @@ function navLinkClass(isActive: boolean) {
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { user } = useUser();
+
+const isAdmin =
+  user?.primaryEmailAddress?.emailAddress?.toLowerCase() ===
+  "bostoncopier@gmail.com";
 
   const isHome = pathname === "/";
   const isSubmit = pathname.startsWith("/submit");
